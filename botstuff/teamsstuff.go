@@ -1,25 +1,31 @@
 package botstuff
 
 import (
+	"bytes"
+	"encoding/json"
 	"fmt"
-	goteamsnotify "github.com/atc0005/go-teams-notify/v2"
+	"io"
+	"log"
+	"net/http"
+	"os"
+
 	"github.com/atc0005/go-teams-notify/v2/adaptivecard"
 	"github.com/spf13/cobra"
-	"io"
-	"net/url"
-	"os"
 )
 
 func sendMessage(theUrl, theTitle, theWebhook, theMessage string) error {
-	c := goteamsnotify.NewTeamsClient()
 	card := adaptivecard.NewCard()
 	openURL, err := adaptivecard.NewActionOpenURL(theUrl, theTitle)
 	if err != nil {
 		return err
 	}
+	data, err := generateQrCodeB64EncodedForUrl(theUrl)
+	if err != nil {
+		return err
+	}
 	img := adaptivecard.Element{
 		Type: "Image",
-		URL:  fmt.Sprintf("https://qr.bache.se?url=%s", url.QueryEscape(theUrl)),
+		URL:  data,
 	}
 	err = card.AddElement(false, img)
 	if err != nil {
@@ -33,9 +39,22 @@ func sendMessage(theUrl, theTitle, theWebhook, theMessage string) error {
 	if err != nil {
 		return err
 	}
-	if err := c.Send(theWebhook, msg); err != nil {
+	msgBytes, err := json.Marshal(msg)
+	if err != nil {
 		return err
 	}
+	resp, err := http.DefaultClient.Post(theWebhook, "application/json", bytes.NewReader(msgBytes))
+	if err != nil {
+		return err
+	}
+	defer resp.Body.Close()
+	code := resp.StatusCode
+	b, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return err
+	}
+	log.Printf("%s", b)
+	println(code)
 	return nil
 }
 

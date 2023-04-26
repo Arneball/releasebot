@@ -1,6 +1,6 @@
 package main
 
-import "git.vgregion.se/healthapps/releasebot/cmd"
+import "github.com/Arneball/releasebot/cmd"
 
 func main() {
 	cmd.Execute()

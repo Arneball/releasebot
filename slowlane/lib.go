@@ -3,11 +3,12 @@ package slowlane
 import (
 	"context"
 	"errors"
+	"log"
+	"os"
+
 	android "google.golang.org/api/androidpublisher/v3"
 	"google.golang.org/api/googleapi"
 	"google.golang.org/api/option"
-	"log"
-	"os"
 )
 
 func Upload(pkg, track, file, state string) error {
@@ -70,24 +71,38 @@ func inEdit[T any](pkg string, f func(s *android.Service, edit *android.AppEdit)
 	return result, err
 }
 
-var notReallyAnError = errors.New("notReallyAnError")
-
 func GetNextVersion(pkg string) (int64, error) {
+	// Used so that inEdit discards the edit
+	var discardEditError = errors.New("discardEditError")
+
 	cnt, err := inEdit[int64](pkg, func(s *android.Service, edit *android.AppEdit) (int64, error) {
 		meh, err := s.Edits.Bundles.List(pkg, edit.Id).Do()
 		if err != nil {
 			return 0, err
 		}
-		var max = int64(0)
+		maxVersionCode := int64(0)
 		for _, apk := range meh.Bundles {
-			if apk.VersionCode > max {
-				max = apk.VersionCode
-			}
+			maxVersionCode = max(apk.VersionCode, maxVersionCode)
 		}
-		return max + 1, notReallyAnError
+		return maxVersionCode + 1, discardEditError
 	})
-	if err == notReallyAnError {
+	if errors.Is(err, discardEditError) {
 		err = nil
 	}
 	return cnt, err
+}
+
+func AddToTrack(pkg string, version int64, track string) error {
+	_, err := inEdit[struct{}](pkg, func(s *android.Service, edit *android.AppEdit) (struct{}, error) {
+		_, err := s.Edits.Tracks.Update(pkg, edit.Id, track, &android.Track{
+			Releases: []*android.TrackRelease{
+				{
+					VersionCodes: []int64{version},
+					Status:       "completed",
+				},
+			},
+		}).Do()
+		return struct{}{}, err
+	})
+	return err
 }

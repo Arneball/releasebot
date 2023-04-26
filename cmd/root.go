@@ -1,10 +1,11 @@
 package cmd
 
 import (
-	"git.vgregion.se/healthapps/releasebot/botstuff"
-	"git.vgregion.se/healthapps/releasebot/slowlane"
-	"github.com/spf13/cobra"
 	"os"
+
+	"github.com/Arneball/releasebot/botstuff"
+	"github.com/Arneball/releasebot/slowlane"
+	"github.com/spf13/cobra"
 )
 
 var rootCmd = &cobra.Command{
@@ -22,5 +23,11 @@ func Execute() {
 }
 
 func init() {
-	rootCmd.AddCommand(slowlane.UploadCommand, slowlane.NextVersionCommand, botstuff.TeamsCommand)
+	rootCmd.AddCommand(
+		slowlane.UploadCommand,
+		slowlane.NextVersionCommand,
+		slowlane.UpdateTrack,
+		botstuff.TeamsCommand,
+		slowlane.DownloadApk,
+	)
 }

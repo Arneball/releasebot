@@ -1,0 +1,19 @@
+---
+- name: Deploy update to servers
+  hosts: all
+  tasks:
+    - name: Build tool
+      delegate_to: 127.0.0.1
+      ansible.builtin.shell: GOOS={{ goos }} GOARCH={{ goarch }} go build -o releasebot{{goos}}{{goarch}} ..
+    - name: Copy
+      become: true
+      ansible.builtin.copy:
+        mode: 0755
+        src: "releasebot{{goos}}{{goarch}}"
+        dest: "{{ path }}/releasebot"
+    - name: Cleanup
+      delegate_to: 127.0.0.1
+      ansible.builtin.file:
+        path: "releasebot{{goos}}{{goarch}}"
+        state: absent
+

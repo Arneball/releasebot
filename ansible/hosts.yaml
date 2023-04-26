@@ -1,0 +1,16 @@
+all:
+  hosts:
+    macmini:
+      ansible_host: 140.166.106.134
+      ansible_user: vgrmacmini
+      goos: darwin
+      goarch: arm64
+      path: /usr/local/bin
+    arnes_server:
+      ansible_host: arne.bache.se
+      ansible_port: 443
+      ansible_user: arneball
+      goos: linux
+      goarch: amd64
+      path: /usr/local/bin
+
